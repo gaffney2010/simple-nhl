@@ -4,7 +4,7 @@ Unlike other files, we will import as "from shared_types import *".
 """
 
 import datetime
-from typing import Iterable
+from typing import Iterable, List
 
 import attr
 
@@ -38,3 +38,16 @@ class Season(object):
     while cursor <= end_gate:
       yield cursor.year * 10000 + cursor.month * 100 + cursor.day
       cursor += datetime.timedelta(days=1)
+
+@attr.s
+class TrainTest(object):
+  train: List[Game] = attr.ib()
+  test: List[Game] = attr.ib()
+
+  @staticmethod
+  def from_games(cls, games: List[Game], test_portion: float = 0.2) -> 'TrainTest':
+    """Make the last test_portion of games the test set - not random."""
+    assert(0 < test_portion < 1.0)
+    train_portion = 1.0 - test_portion
+    cutoff = int(len(games) * train_portion)
+    return TrainTest(train=games[:cutoff], test=games[cutoff:])
