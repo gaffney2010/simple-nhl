@@ -1,14 +1,11 @@
 """Defines GameData and functions to read it."""
 
 import enum
-import os
-import pickle
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, Tuple
 
 from bs4 import BeautifulSoup
 
 import cache
-from constants import *
 import scraper_tools
 from shared_types import *
 
@@ -169,6 +166,10 @@ def _load_game_data_online(game: Game) -> GameData:
   return GameData(game=game, pbp=pbp)
 
 
+# NOTE:  Caching logic for the functions below makes it difficult to delete
+#  stale data.  Sub BasicCacher for NoCacher to remove this logic.
+
+
 def load_game_data(game: Game) -> GameData:
   """Returns GameData for the game.
 
@@ -179,3 +180,40 @@ def load_game_data(game: Game) -> GameData:
     _load_game_data_online(game)
 
   return load_game_data_online()
+
+
+def _get_games_for_date(date: Date) -> List[Game]:
+  """List of games for a date."""
+
+  @cache.memoize(f"GAMES_FOR_DATE_{date}", cache.BasicCacher())
+  def get_games_for_date_impl():
+    SCHED_URL = "https://www.cbssports.com/nhl/schedule/{}/"
+    html = scraper_tools.read_url_to_string(SCHED_URL.format(date))
+    soup = BeautifulSoup(html)
+
+    games = list()
+    table = soup.find("div", id="TableBase")
+
+    # If the date has no games, then this table won't exist.
+    if not table:
+      return []
+
+    for tr in table.find_all("tr", {"class": "TableBase-bodyTr"}):
+      away_team, home_team = None, None
+      for tdi, td in enumerate(tr.find_all("td", {"class": "TableBase-bodyTd"})):
+        if tdi == 0:
+          away_link = td.find("a")["href"]
+          away_team = away_link.split("teams/")[1].split("/")[0]
+        if tdi == 1:
+          home_link = td.find("a")["href"]
+          home_team = home_link.split("teams/")[1].split("/")[0]
+        if tdi > 2:
+          break
+
+      assert (away_team)
+      assert (home_team)
+      games.append(Game(date=date, away=away_team, home=home_team))
+
+    return games
+
+  return get_games_for_date_impl()
