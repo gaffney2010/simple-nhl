@@ -36,3 +36,6 @@ ALL_TEAMS = [
   "STL",
   "LV",
 ]
+
+DATA_DIR = "data"
+LOGGING_DIR = "logging"
