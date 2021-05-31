@@ -7,6 +7,7 @@ from typing import Dict, Optional, Set
 
 from bs4 import BeautifulSoup
 
+import cache
 from constants import *
 import scraper_tools
 from shared_types import *
@@ -168,24 +169,13 @@ def _load_game_data_online(game: Game) -> GameData:
   return GameData(game=game, pbp=pbp)
 
 
-def _file_name(game: Game) -> str:
-  """Makes a file name from a list of args."""
-  return os.path.join(DATA_DIR, str(game))
-
-
 def load_game_data(game: Game) -> GameData:
   """Returns GameData for the game.
 
   If this exists on disk, then will load that.  Otherwise pulls from CBS.
   """
-  fn = _file_name(game)
+  @cache.memoize(game, cache.BasicCacher())
+  def load_game_data_online():
+    _load_game_data_online(game)
 
-  if os.path.exists(fn):
-    with open(fn, "r") as f:
-      return pickle.load(f)
-
-  result = _load_game_data_online(game)
-  with open(fn, "w") as f:
-    pickle.dump(result, f)
-
-  return result
+  return load_game_data_online()

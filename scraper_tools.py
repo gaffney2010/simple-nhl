@@ -1,9 +1,11 @@
 import logging
 import time
+from typing import Optional
 
 import retrying
 import selenium
 
+import cache
 from constants import *
 
 DRIVER_DELAY_SEC = 3
