@@ -36,10 +36,16 @@ class GameData(object):
     self.game = game
     self.pbp = pbp  # Play-by-play sorted by time-in-game
 
-    # Don't calculate these until they're asked for.
+    # Derived values
     self._away_att, self._home_att = None, None
     self._away_score, self._home_score = None, None
     self._winner, self._tie = None, False
+
+    # Compute these values eagerly.  If you remove these lines, the derived
+    #  values will get computed lazily.  But then these won't get saved to the
+    #  file, so this work will get repeated with each new run.
+    self._compute_atts()
+    self._compute_scores()
 
   def _count_plays_by_team(self, types: Set[Play.Type]) -> Dict[Team, int]:
     result = {self.game.away: 0, self.game.home: 0}
