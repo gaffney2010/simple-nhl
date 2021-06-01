@@ -12,6 +12,7 @@ Date = int  # YYYYMMDD
 Team = str
 Url = str
 
+
 @attr.s
 class HockeyTime(object):
   period: int = attr.ib()
@@ -30,7 +31,6 @@ class HockeyTime(object):
     minu = int(minu)
     sec = int(sec)
     return HockeyTime(period, minu * 60 + sec)
-
 
 
 @attr.s

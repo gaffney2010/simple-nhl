@@ -4,6 +4,7 @@ import enum
 from typing import Dict, Optional, Set, Tuple
 
 from bs4 import BeautifulSoup
+from multipledispatch import dispatch
 
 import cache
 import scraper_tools
@@ -217,3 +218,18 @@ def _get_games_for_date(date: Date) -> List[Game]:
     return games
 
   return get_games_for_date_impl()
+
+
+@dispatch(Date)
+def get_games(date: Date) -> Iterable[GameData]:
+  """Read all games on a given date, storing to their respective files."""
+  for away, home in _get_games_for_date(date):
+    yield load_game_data(Game(date=date, away=away, home=home))
+
+
+@dispatch(Season)
+def get_games(season: Season) -> Iterable[GameData]:
+  """Read all games in a given season, storing to their respective files."""
+  for date in season.get_all_dates():
+    for game in get_games(date):
+      yield game
