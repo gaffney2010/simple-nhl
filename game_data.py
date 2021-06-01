@@ -239,3 +239,13 @@ def get_games(season: Season) -> Iterable[GameData]:
   for date in season.get_all_dates():
     for game in get_games(date):
       yield game
+
+
+def make_dataset(season: Season, test_portion: float = 0.2) -> TrainTest:
+  assert(0 < test_portion < 1.0)
+
+  train_portion = 1.0 - test_portion
+
+  games = get_games(season)
+  cutoff = int(len(games) * train_portion)
+  return TrainTest(train=games[:cutoff], test=games[cutoff:])
