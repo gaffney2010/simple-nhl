@@ -1,112 +1,12 @@
 """Defines GameData and functions to read it."""
 
-import enum
-from typing import Dict, Optional, Set, Tuple
-
 from bs4 import BeautifulSoup
+import functools
 from multipledispatch import dispatch
 
 import cache
 import scraper_tools
 from shared_types import *
-
-
-@attr.s
-class Play(object):
-  """Various plays to be stored in the play-by-play."""
-
-  class Type(enum.Enum):
-    end_of_period = 1
-    goal = 2
-    face_off = 3
-    shot = 4  # Shot not resulting in a goal.
-
-  game: Game = attr.ib()
-  hockey_time: HockeyTime = attr.ib()
-  type: Type = attr.ib()
-  # If type is goal or shot, refers to the team shooting.  If type is face_off,
-  #  refers to the team that wins the face off.
-  team: Optional[Team] = attr.ib(default=None)
-
-
-class GameData(object):
-  """Includes a play-by-play, and some lazily calculated meta-stats."""
-
-  def __init__(self, game: Game, pbp: List[Play]):
-    self.game = game
-    self.pbp = pbp  # Play-by-play sorted by time-in-game
-
-    # Derived values
-    self._away_att, self._home_att = None, None
-    self._away_score, self._home_score = None, None
-    self._winner, self._tie = None, False
-
-    # Compute these values eagerly.  If you remove these lines, the derived
-    #  values will get computed lazily.  But then these won't get saved to the
-    #  file, so this work will get repeated with each new run.
-    self._compute_atts()
-    self._compute_scores()
-
-  def _count_plays_by_team(self, types: Set[Play.Type]) -> Dict[Team, int]:
-    result = {self.game.away: 0, self.game.home: 0}
-    for play in self.pbp:
-      if play.type in types:
-        result[play.team] += 1
-    return result
-
-  def _compute_atts(self):
-    """Sets away_att and home_att."""
-    atts = self._count_plays_by_team({Play.Type.shot, Play.Type.goal})
-    self._away_att, self._home_att = atts[self.game.away], atts[self.game.home]
-
-  def _compute_scores(self):
-    """Sets home_score, away_score, winner, and tie."""
-    scores = self._count_plays_by_team({Play.Type.goal})
-
-    self._away_score, self._home_score = scores[self.game.away], scores[
-      self.game.home]
-
-    if self._away_score < self._home_score:
-      self._winner = self.game.home
-    elif self._away_score > self._home_score:
-      self._winner = self.game.away
-    else:
-      self._tie = True
-
-  @property
-  def away_att(self):
-    if self._away_att is None:
-      self._compute_atts()
-
-    return self._away_att
-
-  @property
-  def home_att(self):
-    if self._home_att is None:
-      self._compute_atts()
-
-    return self._home_att
-
-  @property
-  def away_score(self):
-    if self._away_score is None:
-      self._compute_scores()
-
-    return self._away_score
-
-  @property
-  def home_score(self):
-    if self._home_score is None:
-      self._compute_scores()
-
-    return self._home_score
-
-  @property
-  def winner(self):
-    if self._winner is None and not self._tie:
-      self._compute_scores()
-
-    return self._winner  # May be None still.
 
 
 def _load_game_data_online(game: Game) -> GameData:
@@ -119,12 +19,13 @@ def _load_game_data_online(game: Game) -> GameData:
   EOP, no team is listed.)
   """
   PBP_URL = "https://www.cbssports.com/nhl/gametracker/playbyplay/NHL_{}_{}@{}"
+  url = PBP_URL.format(game.date, game.away, game.home)
 
-  with scraper_tools.read_url_to_string(
-      PBP_URL.format(game.date, game.away, game.home)) as f:
-    html = f.read().decode("utf-8")
+  print(f"Downloading {url}")
 
-  soup = BeautifulSoup(html)
+  html = scraper_tools.read_url_to_string(url)
+
+  soup = BeautifulSoup(html, features="html.parser")
 
   started_pbp = False  # Don't start reading until first end-of-period
   result_pbp = list()
@@ -177,26 +78,28 @@ def _load_game_data_online(game: Game) -> GameData:
 #  stale data.  Sub BasicCacher for NoCacher to remove this logic.
 
 
+@functools.lru_cache(1500)
 def load_game_data(game: Game) -> GameData:
   """Returns GameData for the game.
 
   If this exists on disk, then will load that.  Otherwise pulls from CBS.
   """
-  @cache.memoize(game, cache.BasicCacher())
+  @cache.memoize(str(game), cache.BasicCacher())
   def load_game_data_online():
-    _load_game_data_online(game)
+    return _load_game_data_online(game)
 
   return load_game_data_online()
 
 
-def _get_games_for_date(date: Date) -> List[Game]:
+@dispatch(Date)
+def get_games(date: Date) -> List[Game]:
   """List of games for a date."""
 
   @cache.memoize(f"GAMES_FOR_DATE_{date}", cache.BasicCacher())
   def get_games_for_date_impl():
     SCHED_URL = "https://www.cbssports.com/nhl/schedule/{}/"
     html = scraper_tools.read_url_to_string(SCHED_URL.format(date))
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, features="html.parser")
 
     games = list()
     table = soup.find("div", id="TableBase")
@@ -226,19 +129,28 @@ def _get_games_for_date(date: Date) -> List[Game]:
   return get_games_for_date_impl()
 
 
+@dispatch(Season)
+def get_games(season: Season) -> List[Game]:
+  """List of games for a season."""
+  result = list()
+  for date in season.get_all_dates():
+    for game in get_games(date):
+      result.append(game)
+  return result
+
+
 @dispatch(Date)
-def get_games(date: Date) -> Iterable[GameData]:
+def get_games_data(date: Date) -> Iterable[GameData]:
   """Read all games on a given date, storing to their respective files."""
-  for away, home in _get_games_for_date(date):
-    yield load_game_data(Game(date=date, away=away, home=home))
+  for game in get_games(date):
+    yield load_game_data(game)
 
 
 @dispatch(Season)
-def get_games(season: Season) -> Iterable[GameData]:
+def get_games_data(season: Season) -> Iterable[GameData]:
   """Read all games in a given season, storing to their respective files."""
-  for date in season.get_all_dates():
-    for game in get_games(date):
-      yield game
+  for game in get_games(season):
+    yield load_game_data(game)
 
 
 def make_dataset(season: Season, test_portion: float = 0.2) -> TrainTest:

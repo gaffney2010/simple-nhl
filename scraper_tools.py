@@ -1,11 +1,9 @@
 import logging
 import time
-from typing import Optional
 
 import retrying
-import selenium
+from selenium import webdriver
 
-import cache
 from constants import *
 
 DRIVER_DELAY_SEC = 3
@@ -30,9 +28,9 @@ class WebDriver(object):
     # Lazy load
     if self._driver is None:
       logging.debug("Initializing driver.")
-      options = selenium.webdriver.FirefoxOptions()
+      options = webdriver.FirefoxOptions()
       options.add_argument('--headless')
-      self._driver = selenium.webdriver.Firefox(
+      self._driver = webdriver.Firefox(
         options=options,
         service_log_path="{}/geckodriver.log".format(LOGGING_DIR))
       logging.debug("Finished initializing driver.")

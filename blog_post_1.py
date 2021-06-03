@@ -25,6 +25,7 @@ def plot_table(model: models.PointsModel) -> None:
 
 # Graph for Interaction model
 data_18 = game_data.make_dataset(Season(2018))
+print(str(data_18))
 model1 = models.InteractionModel()
 model1.fit(data_18)
 plot_table(model1)

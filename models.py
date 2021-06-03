@@ -1,10 +1,12 @@
 from collections import defaultdict
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
-import statsmodel as sm
+import statsmodels.api as sm
 
 from constants import *
+import game_data
 from shared_types import *
 
 
@@ -35,7 +37,8 @@ class PointsModel(object):
         # We skip Golden Knights so that code can run the same for all years
         continue
 
-      act_home_pts, act_away_pts = game.home_score, game.away_score
+      data = game_data.load_game_data(game)
+      act_home_pts, act_away_pts = data.home_score, data.away_score
       pred_home_pts, pred_away_pts = self.predict(game)
 
       if pred_home_pts != pred_home_pts or pred_away_pts != pred_away_pts:
@@ -62,8 +65,9 @@ class InteractionModel(PointsModel):
     _played = defaultdict(int)
 
     for game in train_set:
-      _points_won[(game.home, game.away)] += game.home_score
-      _points_won[(game.away, game.home)] += game.away_score
+      data = game_data.load_game_data(game)
+      _points_won[(game.home, game.away)] += data.home_score
+      _points_won[(game.away, game.home)] += data.away_score
       _played[(game.home, game.away)] += 1
       _played[(game.away, game.home)] += 1
 
@@ -89,14 +93,15 @@ class OffenseDefenseModel(PointsModel):
     super().__init__()
 
   def fit_impl(self, train_set: List[Game]) -> None:
-    data = list()
+    df_data = list()
     for game in train_set:
-      data.append(
-        {"team": game.home, "opp": game.away, "points": game.home_score})
-      data.append(
-        {"team": game.away, "opp": game.home, "points": game.away_score})
+      data = game_data.load_game_data(game)
+      df_data.append(
+        {"team": game.home, "opp": game.away, "points": data.home_score})
+      df_data.append(
+        {"team": game.away, "opp": game.home, "points": data.away_score})
 
-    points_df = pd.DataFrame(data)
+    points_df = pd.DataFrame(df_data)
 
     points_x = pd.concat(
       [pd.get_dummies(points_df["team"], prefix="TEAM"),
@@ -112,8 +117,9 @@ class OffenseDefenseModel(PointsModel):
 
   def predict(self, game: Game) -> Tuple[float, float]:
     assert (self._points_for)  # fit has already run
-    return (self._points_for[game.home] - self._points_against[game.away],
-            self._points_for[game.away] - self._points_against[game.home])
+    return (
+    self._points_for[game.home] - self._points_against[game.away],
+    self._points_for[game.away] - self._points_against[game.home])
 
 
 class OffenseOnlyModel(PointsModel):
@@ -129,8 +135,9 @@ class OffenseOnlyModel(PointsModel):
     _played = defaultdict(int)
 
     for game in train_set:
-      _points_won[game.home] += game.home_score
-      _points_won[game.away] += game.away_score
+      data = game_data.load_game_data(game)
+      _points_won[game.home] += data.home_score
+      _points_won[game.away] += data.away_score
       _played[game.home] += 1
       _played[game.away] += 1
 

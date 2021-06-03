@@ -1,6 +1,7 @@
 attrs
 bs4
 multipledispatch
+numpy
 pandas
 retrying
 seaborn
