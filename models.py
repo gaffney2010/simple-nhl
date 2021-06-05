@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Tuple
+from typing import Callable, Tuple
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,15 @@ import statsmodels.api as sm
 from constants import *
 import game_data
 from shared_types import *
+
+
+AwayHomeTarget = Tuple[float, float]
+
+
+def _scores(game: Game) -> AwayHomeTarget:
+  """Gets scores for the game.  Default target."""
+  data = game_data.load_game_data(game)
+  return (data.away_score, data.home_score)
 
 
 class PointsModel(object):
