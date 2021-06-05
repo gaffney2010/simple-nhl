@@ -10,14 +10,8 @@ from shared_types import *
 
 
 def _load_game_data_online(game: Game) -> GameData:
-  """Reads a play-by-play page from CBS, given the date and teams.
-
-  Keeps only "relevant" plays.  Each play has the format "<time> <type> <team>".
-  Where <time> is the number of seconds from the start of the period; type is
-  either "FO" for face-off or "SHOT" for a shot taken or "EOP" for end of
-  period; and team is the team that won the face-off or took the shot.  (For
-  EOP, no team is listed.)
-  """
+  """Reads a play-by-play page from CBS, given the date and teams,
+  keeping only "relevant" plays."""
   PBP_URL = "https://www.cbssports.com/nhl/gametracker/playbyplay/NHL_{}_{}@{}"
   url = PBP_URL.format(game.date, game.away, game.home)
 
