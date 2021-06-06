@@ -5,6 +5,7 @@ Unlike other files, we will import as "from shared_types import *".
 
 import datetime
 import enum
+import logging
 from typing import Dict, Iterable, List, Optional, Set
 
 import attr
@@ -106,7 +107,12 @@ class GameData(object):
         result = {self.game.away: 0, self.game.home: 0}
         for play in self.pbp:
             if play.type in types:
-                result[play.team] += 1
+                try:
+                    result[play.team] += 1
+                except:
+                    # Seems to be a general data error.  Log it.
+                    logging.error(f"Error with play {play} in game {self.game}")
+                    # Then just keep going
         return result
 
     def _compute_atts(self):

@@ -2,12 +2,12 @@ import logging
 
 logging.basicConfig(
     format="%(asctime)s  %(levelname)s:\t%(module)s::%(funcName)s:%(lineno)d\t-\t%(message)s",
-    level=logging.INFO,
+    level=logging.DEBUG,
 )
 
 import numpy as np
 
-import seaborn as sns;
+import seaborn as sns
 
 sns.set_theme()
 
@@ -37,6 +37,7 @@ logging.info("============")
 logging.info("Pull 2018")
 data_18 = game_data.make_dataset(Season(2018))
 logging.debug(str(data_18))
+
 model1 = models.InteractionModel()
 model1.fit(data_18)
 plot_table(model1)

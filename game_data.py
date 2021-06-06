@@ -34,7 +34,9 @@ def _load_game_data_online(game: Game) -> GameData:
             spans = row.find_all("span")
             row = [span.text for span in spans]
 
-            if row and row[-1] == "End of ":  # End of game or period
+            logging.debug(row)
+
+            if row and row[-1].find("End of ") != -1:  # End of game or period
                 period -= 1
                 started_pbp = True
                 result_pbp.append(Play(
@@ -57,9 +59,11 @@ def _load_game_data_online(game: Game) -> GameData:
                 this_play_type = Play.Type.shot
 
             if this_play_type:
-                result_pbp.append(Play(
+                new_play = Play(
                     game=game, hockey_time=hockey_time, type=this_play_type,
-                    team=row[2]))
+                    team=row[2])
+                logging.debug(new_play)
+                result_pbp.append(new_play)
 
     # period is recorded as -1..-3 or -1..-N in the event of overtimes.  Remap -N
     #  to 1.

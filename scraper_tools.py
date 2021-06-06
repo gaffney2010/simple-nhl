@@ -4,6 +4,7 @@ import time
 import retrying
 from selenium import webdriver
 
+import cache
 from constants import *
 
 DRIVER_DELAY_SEC = 3
@@ -55,6 +56,7 @@ def read_url_to_string(url: str) -> str:
          The body of the resulting HTML in a flat string.
     """
 
+    @cache.memoize(url, cache.BasicCacher())
     @retrying.retry(wait_random_min=200, wait_random_max=400,
                     stop_max_attempt_number=3)
     def read_url_to_string_helper(help_url, web_driver):
