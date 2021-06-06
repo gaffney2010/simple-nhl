@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Tuple
+from typing import Callable, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,6 +10,7 @@ from constants import *
 from shared_types import *
 
 AwayHomeTarget = Tuple[float, float]
+TargetGetter = Callable[[Game], AwayHomeTarget]
 
 
 def _scores(game: Game) -> AwayHomeTarget:
@@ -21,8 +22,8 @@ def _scores(game: Game) -> AwayHomeTarget:
 class PointsModel(object):
     """A Model class contains information for training and predicting."""
 
-    def __init__(self):
-        pass
+    def __init__(self, target_getter: TargetGetter = _scores):
+        self.target_getter = target_getter
 
     def fit_impl(self, train_set: List[Game]) -> None:
         """Implement this in a child class."""
@@ -45,16 +46,15 @@ class PointsModel(object):
                 # We skip Golden Knights so that code can run the same for all years
                 continue
 
-            data = game_data.load_game_data(game)
-            act_home_pts, act_away_pts = data.home_score, data.away_score
+            act_away_target, act_home_target = self.target_getter(game)
             pred_home_pts, pred_away_pts = self.predict(game)
 
             if pred_home_pts != pred_home_pts or pred_away_pts != pred_away_pts:
                 # Models may return nan for unknowns.
                 continue
 
-            num += (act_home_pts - pred_home_pts) ** 2
-            num += (act_away_pts - pred_away_pts) ** 2
+            num += (act_away_target - pred_away_pts) ** 2
+            num += (act_home_target - pred_home_pts) ** 2
             den += 2
         return num / den
 
@@ -63,10 +63,10 @@ class InteractionModel(PointsModel):
     """For this model, the prediction of win margin is average win margin from the
     previous times the two teams met."""
 
-    def __init__(self):
+    def __init__(self, target_getter: TargetGetter = _scores):
         # For (x, y), the average points x won when playing against y.
         self._avg_pts = dict()
-        super().__init__()
+        super().__init__(target_getter)
 
     def fit_impl(self, train_set: List[Game]) -> None:
         _points_won = defaultdict(int)
@@ -92,13 +92,13 @@ class InteractionModel(PointsModel):
 class OffenseDefenseModel(PointsModel):
     """For this model, we have a variable for both the team and its opponent."""
 
-    def __init__(self):
+    def __init__(self, target_getter: TargetGetter = _scores):
         # The number of points expected to score against base team.
         self._points_for = dict()
         # For each team, t, how many points fewer a team is expected to score
         #  playing t than if they had played the base team.
         self._points_against = dict()
-        super().__init__()
+        super().__init__(target_getter)
 
     def fit_impl(self, train_set: List[Game]) -> None:
         df_data = list()
@@ -135,10 +135,10 @@ class OffenseDefenseModel(PointsModel):
 class OffenseOnlyModel(PointsModel):
     """For this model, we have a variable for both the team and its opponent."""
 
-    def __init__(self):
+    def __init__(self, target_getter: TargetGetter = _scores):
         # Average points per game for each team.
         self._avg_pts = dict()
-        super().__init__()
+        super().__init__(target_getter)
 
     def fit_impl(self, train_set: List[Game]) -> None:
         _points_won = defaultdict(int)
