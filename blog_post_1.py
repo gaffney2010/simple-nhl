@@ -1,3 +1,9 @@
+import logging
+logging.basicConfig(
+  format="%(asctime)s  %(levelname)s:\t%(module)s::%(funcName)s:%(lineno)d\t-\t%(message)s",
+  level=logging.INFO,
+)
+
 import numpy as np
 
 import seaborn as sns; sns.set_theme()
@@ -24,10 +30,10 @@ def plot_table(model: models.PointsModel) -> None:
 
 
 # Graph for Interaction model
-print("============")
-print("Pull 2018")
+logging.info("============")
+logging.info("Pull 2018")
 data_18 = game_data.make_dataset(Season(2018))
-print(str(data_18))
+logging.debug(str(data_18))
 model1 = models.InteractionModel()
 model1.fit(data_18)
 plot_table(model1)
@@ -49,12 +55,12 @@ plot_table(model3)
 for model in (model1, model2, model3):
   avg_score = 0
   for year in range(2014, 2019):
-    print("============")
-    print(f"Pull {year}")
+    logging.info("============")
+    logging.info(f"Pull {year}")
     ds = game_data.make_dataset(Season(year))
     model.fit(ds)
     avg_score += model.score(ds)
   avg_score /= 5
-  print("==========")
-  print(model)
-  print(avg_score)
+  logging.info("==========")
+  logging.info(model)
+  logging.info(avg_score)

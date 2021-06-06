@@ -1,5 +1,7 @@
 """Defines GameData and functions to read it."""
 
+import logging
+
 from bs4 import BeautifulSoup
 import functools
 from multipledispatch import dispatch
@@ -15,7 +17,7 @@ def _load_game_data_online(game: Game) -> GameData:
   PBP_URL = "https://www.cbssports.com/nhl/gametracker/playbyplay/NHL_{}_{}@{}"
   url = PBP_URL.format(game.date, game.away, game.home)
 
-  print(f"Downloading {url}")
+  logging.debug(f"Downloading {url}")
 
   html = scraper_tools.read_url_to_string(url)
 
@@ -78,7 +80,7 @@ def load_game_data(game: Game) -> GameData:
 
   If this exists on disk, then will load that.  Otherwise pulls from CBS.
   """
-  print(f"Try load game: {str(game)}")
+  logging.debug(f"Try load game: {str(game)}")
   @cache.memoize(str(game), cache.BasicCacher())
   def load_game_data_online():
     return _load_game_data_online(game)
@@ -90,7 +92,7 @@ def load_game_data(game: Game) -> GameData:
 def get_games(date: Date) -> List[Game]:
   """List of games for a date."""
 
-  print(f"Looking games for date {date}")
+  logging.debug(f"Looking games for date {date}")
 
   @cache.memoize(f"GAMES_FOR_DATE_{date}", cache.BasicCacher())
   def get_games_for_date_impl():
