@@ -33,8 +33,8 @@ class PointsModel(object):
         """Fits internal variables (by year) from the passed dataset."""
         self.fit_impl(train_test.train)
 
-    def predict(self, game: Game) -> Tuple[float, float]:
-        """Returns the expected points for the home and away teams (resp.).
+    def predict(self, game: Game) -> AwayHomeTarget:
+        """Returns the expected points for the away and home teams (resp.).
         Implement in the child class."""
         raise NotImplementedError
 
@@ -82,11 +82,11 @@ class InteractionModel(PointsModel):
         for k in _played.keys():
             self._avg_pts[k] = _points_won[k] / _played[k]
 
-    def predict(self, game: Game) -> Tuple[float, float]:
+    def predict(self, game: Game) -> AwayHomeTarget:
         assert (self._avg_pts)  # fit has already run
         home_pred = self._avg_pts.get((game.home, game.away), np.nan)
         away_pred = self._avg_pts.get((game.away, game.home), np.nan)
-        return home_pred, away_pred
+        return away_pred, home_pred
 
 
 class OffenseDefenseModel(PointsModel):
@@ -125,11 +125,11 @@ class OffenseDefenseModel(PointsModel):
             self._points_for[team] = results.params.get(f"TEAM_{team}")
             self._points_against[team] = results.params.get(f"OPP_{team}", 0)
 
-    def predict(self, game: Game) -> Tuple[float, float]:
+    def predict(self, game: Game) -> AwayHomeTarget:
         assert (self._points_for)  # fit has already run
         return (
-            self._points_for[game.home] - self._points_against[game.away],
-            self._points_for[game.away] - self._points_against[game.home])
+            self._points_for[game.away] - self._points_against[game.home],
+            self._points_for[game.home] - self._points_against[game.away])
 
 
 class OffenseOnlyModel(PointsModel):
@@ -154,6 +154,6 @@ class OffenseOnlyModel(PointsModel):
         for k in _played.keys():
             self._avg_pts[k] = _points_won[k] / _played[k]
 
-    def predict(self, game: Game) -> Tuple[float, float]:
+    def predict(self, game: Game) -> AwayHomeTarget:
         assert (self._avg_pts)  # fit has already run
-        return self._avg_pts[game.home], self._avg_pts[game.away]
+        return self._avg_pts[game.away], self._avg_pts[game.home]
