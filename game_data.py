@@ -84,6 +84,7 @@ def load_game_data(game: Game) -> GameData:
 
   If this exists on disk, then will load that.  Otherwise pulls from CBS.
   """
+  print(f"Try load game: {str(game)}")
   @cache.memoize(str(game), cache.BasicCacher())
   def load_game_data_online():
     return _load_game_data_online(game)
@@ -94,6 +95,8 @@ def load_game_data(game: Game) -> GameData:
 @dispatch(Date)
 def get_games(date: Date) -> List[Game]:
   """List of games for a date."""
+
+  print(f"Looking games for date {date}")
 
   @cache.memoize(f"GAMES_FOR_DATE_{date}", cache.BasicCacher())
   def get_games_for_date_impl():
@@ -109,20 +112,23 @@ def get_games(date: Date) -> List[Game]:
       return []
 
     for tr in table.find_all("tr", {"class": "TableBase-bodyTr"}):
-      away_team, home_team = None, None
-      for tdi, td in enumerate(tr.find_all("td", {"class": "TableBase-bodyTd"})):
-        if tdi == 0:
-          away_link = td.find("a")["href"]
-          away_team = away_link.split("teams/")[1].split("/")[0]
-        if tdi == 1:
-          home_link = td.find("a")["href"]
-          home_team = home_link.split("teams/")[1].split("/")[0]
-        if tdi > 2:
-          break
+      try:
+        away_team, home_team = None, None
+        for tdi, td in enumerate(tr.find_all("td", {"class": "TableBase-bodyTd"})):
+          if tdi == 0:
+            away_link = td.find("a")["href"]
+            away_team = away_link.split("teams/")[1].split("/")[0]
+          if tdi == 1:
+            home_link = td.find("a")["href"]
+            home_team = home_link.split("teams/")[1].split("/")[0]
+          if tdi > 2:
+            break
 
-      assert (away_team)
-      assert (home_team)
-      games.append(Game(date=date, away=away_team, home=home_team))
+        assert (away_team)
+        assert (home_team)
+        games.append(Game(date=date, away=away_team, home=home_team))
+      except:
+        pass
 
     return games
 

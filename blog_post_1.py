@@ -24,6 +24,8 @@ def plot_table(model: models.PointsModel) -> None:
 
 
 # Graph for Interaction model
+print("============")
+print("Pull 2018")
 data_18 = game_data.make_dataset(Season(2018))
 print(str(data_18))
 model1 = models.InteractionModel()
@@ -47,6 +49,8 @@ plot_table(model3)
 for model in (model1, model2, model3):
   avg_score = 0
   for year in range(2014, 2019):
+    print("============")
+    print(f"Pull {year}")
     ds = game_data.make_dataset(Season(year))
     model.fit(ds)
     avg_score += model.score(ds)
