@@ -2,7 +2,7 @@ import logging
 
 logging.basicConfig(
     format="%(asctime)s  %(levelname)s:\t%(module)s::%(funcName)s:%(lineno)d\t-\t%(message)s",
-    level=logging.DEBUG,
+    level=logging.INFO,
 )
 
 import numpy as np
