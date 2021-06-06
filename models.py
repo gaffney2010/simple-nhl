@@ -47,7 +47,7 @@ class PointsModel(object):
                 continue
 
             act_away_target, act_home_target = self.target_getter(game)
-            pred_home_pts, pred_away_pts = self.predict(game)
+            pred_away_pts, pred_home_pts = self.predict(game)
 
             if pred_home_pts != pred_home_pts or pred_away_pts != pred_away_pts:
                 # Models may return nan for unknowns.
