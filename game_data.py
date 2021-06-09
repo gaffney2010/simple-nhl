@@ -16,7 +16,7 @@ def _load_game_data_online(game: Game) -> GameData:
     PBP_URL = "https://www.cbssports.com/nhl/gametracker/playbyplay/NHL_{}_{}@{}"
     url = PBP_URL.format(game.date, game.away, game.home)
 
-    logging.info(f"Downloading {url}")
+    logging.debug(f"Downloading {url}")
 
     html = scraper_tools.read_url_to_string(url)
 
@@ -26,7 +26,11 @@ def _load_game_data_online(game: Game) -> GameData:
     result_pbp = list()
     period = 0
 
-    tables = soup.find_all("ul", {
+    # First look for a div called gametracker|play_by_play_batter, which removes
+    #  a pesky sidebar.
+    body = soup.find("div", {"aa-region": "gametracker|play_by_play_batter"})
+
+    tables = body.find_all("ul", {
         "class": "gametracker-list gametracker-list--play-by-play"})
     for table in tables:
         for row in table.find_all("li"):
@@ -84,7 +88,7 @@ def load_game_data(game: Game) -> GameData:
 
     If this exists on disk, then will load that.  Otherwise pulls from CBS.
     """
-    logging.info(f"Try load game: {str(game)}")
+    logging.debug(f"Try load game: {str(game)}")
 
     @cache.memoize(str(game), cache.BasicCacher())
     def load_game_data_online():
@@ -97,7 +101,7 @@ def load_game_data(game: Game) -> GameData:
 def get_games(date: Date) -> List[Game]:
     """List of games for a date."""
 
-    logging.info(f"Looking games for date {date}")
+    logging.debug(f"Looking games for date {date}")
 
     @cache.memoize(f"GAMES_FOR_DATE_{date}", cache.BasicCacher())
     def get_games_for_date_impl():

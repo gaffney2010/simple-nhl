@@ -64,8 +64,8 @@ def read_url_to_string(url: str) -> str:
         time.sleep(DRIVER_DELAY_SEC)
         return web_driver.driver().page_source
 
-    logging.info(f"Reading URL: {url}")
+    logging.debug(f"Reading URL: {url}")
     with WebDriver() as driver:
         page_text = read_url_to_string_helper(url, driver)
-    logging.info("Finished pulling URL.")
+    logging.debug("Finished pulling URL.")
     return page_text

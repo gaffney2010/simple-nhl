@@ -31,10 +31,7 @@ def plot_table(model: models.PointsModel) -> None:
 
     sns.heatmap(cells, xticklabels=ALL_TEAMS, yticklabels=ALL_TEAMS)
 
-
 # Graph for Interaction model
-logging.info("============")
-logging.info("Pull 2018")
 data_18 = game_data.make_dataset(Season(2018))
 logging.debug(str(data_18))
 
@@ -54,14 +51,14 @@ plot_table(model3)
 
 # Compute score across 5 years ending in 2018
 for model in (model1, model2, model3):
-    avg_score = 0
-    for year in range(2014, 2019):
-        logging.info("============")
-        logging.info(f"Pull {year}")
-        ds = game_data.make_dataset(Season(year))
-        model.fit(ds)
-        avg_score += model.score(ds)
-    avg_score /= 5
     logging.info("==========")
     logging.info(model)
+    avg_score = 0
+    for year in range(2017, 2019):
+        ds = game_data.make_dataset(Season(year))
+        model.fit(ds)
+        x = model.score(ds)
+        print(x)
+        avg_score += x
+    avg_score /= 5
     logging.info(avg_score)
