@@ -43,6 +43,7 @@ for model in [
 ]:
     logging.info(" ")
     logging.info("========================")
+    logging.info(model)
     model.fit(data_18)
     logging.info(model.score(data_18))
     # plot_table(model1)
