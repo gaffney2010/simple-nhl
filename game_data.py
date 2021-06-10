@@ -10,7 +10,7 @@ import scraper_tools
 from shared_types import *
 
 
-def _load_game_data_online(game: Game) -> GameData:
+def _load_game_data_online(game: Game) -> Optional[GameData]:
     """Reads a play-by-play page from CBS, given the date and teams,
     keeping only "relevant" plays."""
     PBP_URL = "https://www.cbssports.com/nhl/gametracker/playbyplay/NHL_{}_{}@{}"
@@ -30,8 +30,13 @@ def _load_game_data_online(game: Game) -> GameData:
     #  a pesky sidebar.
     body = soup.find("div", {"aa-region": "gametracker|play_by_play_batter"})
 
-    tables = body.find_all("ul", {
-        "class": "gametracker-list gametracker-list--play-by-play"})
+    try:
+        tables = body.find_all("ul", {
+            "class": "gametracker-list gametracker-list--play-by-play"})
+    except:
+        logging.error(f"Tables problem with {game}")
+        return None
+
     for table in tables:
         for row in table.find_all("li"):
             spans = row.find_all("span")
@@ -83,7 +88,7 @@ def _load_game_data_online(game: Game) -> GameData:
 
 
 @functools.lru_cache(1500)
-def load_game_data(game: Game) -> GameData:
+def load_game_data(game: Game) -> Optional[GameData]:
     """Returns GameData for the game.
 
     If this exists on disk, then will load that.  Otherwise pulls from CBS.

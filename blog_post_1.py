@@ -35,30 +35,14 @@ def plot_table(model: models.PointsModel) -> None:
 data_18 = game_data.make_dataset(Season(2018))
 logging.debug(str(data_18))
 
-model1 = models.InteractionModel()
-model1.fit(data_18)
-plot_table(model1)
-
-# Graph for Offense-Defense model
-model2 = models.OffenseDefenseModel()
-model2.fit(data_18)
-plot_table(model2)
-
-# Graph for Offense-Only model
-model3 = models.OffenseOnlyModel()
-model3.fit(data_18)
-plot_table(model3)
-
-# Compute score across 5 years ending in 2018
-for model in (model1, model2, model3):
-    logging.info("==========")
-    logging.info(model)
-    avg_score = 0
-    for year in range(2017, 2019):
-        ds = game_data.make_dataset(Season(year))
-        model.fit(ds)
-        x = model.score(ds)
-        print(x)
-        avg_score += x
-    avg_score /= 5
-    logging.info(avg_score)
+model = models.InteractionModel()
+for model in [
+    models.InteractionModel(),
+    models.OffenseDefenseModel(),
+    models.OffenseOnlyModel()
+]:
+    logging.info(" ")
+    logging.info("========================")
+    model.fit(data_18)
+    logging.info(model.score(data_18))
+    # plot_table(model1)

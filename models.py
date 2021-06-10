@@ -13,9 +13,11 @@ AwayHomeTarget = Tuple[float, float]
 TargetGetter = Callable[[Game], AwayHomeTarget]
 
 
-def _scores(game: Game) -> AwayHomeTarget:
+def _scores(game: Game) -> Optional[AwayHomeTarget]:
     """Gets scores for the game.  Default target."""
     data = game_data.load_game_data(game)
+    if data is None:
+        return None
     return (data.away_score, data.home_score)
 
 
@@ -46,7 +48,11 @@ class PointsModel(object):
                 # We skip Golden Knights so that code can run the same for all years
                 continue
 
-            act_away_target, act_home_target = self.target_getter(game)
+            targets = self.target_getter(game)
+            if not targets:
+                # Skip over errors
+                continue
+            act_away_target, act_home_target = targets
             pred_away_pts, pred_home_pts = self.predict(game)
 
             if pred_home_pts != pred_home_pts or pred_away_pts != pred_away_pts:
@@ -73,9 +79,13 @@ class InteractionModel(PointsModel):
         _played = defaultdict(int)
 
         for game in train_set:
-            data = game_data.load_game_data(game)
-            _points_won[(game.home, game.away)] += data.home_score
-            _points_won[(game.away, game.home)] += data.away_score
+            targets = self.target_getter(game)
+            if not targets:
+                # Skip over errors
+                continue
+            away_target, home_target = targets
+            _points_won[(game.home, game.away)] += home_target
+            _points_won[(game.away, game.home)] += away_target
             _played[(game.home, game.away)] += 1
             _played[(game.away, game.home)] += 1
 
@@ -103,13 +113,17 @@ class OffenseDefenseModel(PointsModel):
     def fit_impl(self, train_set: List[Game]) -> None:
         df_data = list()
         for game in train_set:
-            data = game_data.load_game_data(game)
+            targets = self.target_getter(game)
+            if not targets:
+                # Skip over errors
+                continue
+            away_target, home_target = targets
             df_data.append(
                 {"team": game.home, "opp": game.away,
-                 "points": data.home_score})
+                 "points": home_target})
             df_data.append(
                 {"team": game.away, "opp": game.home,
-                 "points": data.away_score})
+                 "points": away_target})
 
         points_df = pd.DataFrame(df_data)
 
@@ -145,9 +159,13 @@ class OffenseOnlyModel(PointsModel):
         _played = defaultdict(int)
 
         for game in train_set:
-            data = game_data.load_game_data(game)
-            _points_won[game.home] += data.home_score
-            _points_won[game.away] += data.away_score
+            targets = self.target_getter(game)
+            if not targets:
+                # Skip over errors
+                continue
+            away_target, home_target = targets
+            _points_won[game.home] += home_target
+            _points_won[game.away] += away_target
             _played[game.home] += 1
             _played[game.away] += 1
 
