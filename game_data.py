@@ -5,8 +5,8 @@ import functools
 from bs4 import BeautifulSoup
 from multipledispatch import dispatch
 
-import cache
-import scraper_tools
+from tools import cache
+from tools import scraper_tools
 from shared_types import *
 
 

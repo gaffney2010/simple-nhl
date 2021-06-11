@@ -4,7 +4,7 @@ import time
 import retrying
 from selenium import webdriver
 
-import cache
+from tools import cache
 from constants import *
 
 DRIVER_DELAY_SEC = 3

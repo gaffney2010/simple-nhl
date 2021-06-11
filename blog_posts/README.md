@@ -1,0 +1,1 @@
+These files contain scripts for calculating things specific to the individual blog posts.
