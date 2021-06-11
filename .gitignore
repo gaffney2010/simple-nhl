@@ -134,3 +134,6 @@ dmypy.json
 # Custom locations
 data/*.data
 logging/*.log
+
+# Won't apply to another computer
+computer_constants.py
