@@ -97,11 +97,11 @@ logging.info("")
 benchmark = models.OffenseOnlyModel()
 benchmark.fit(data_18)
 
+rando = models.RandomModel()
+rando.fit(data_18)
 
 
-
-
-for model in (benchmark, shots_w_gp):
+for model in (rando, benchmark, shots_w_gp):
     logging.info("===================")
     logging.info(model)
 
@@ -149,6 +149,8 @@ for model in (benchmark, shots_w_gp):
         else:
             log_likelihood += np.log(1 - pred)
 
+    logging.info("# pts")
+    logging.info(win_den)
     logging.info("Win perc")
     logging.info(win_num / win_den)
     logging.info("Log-likelihood")

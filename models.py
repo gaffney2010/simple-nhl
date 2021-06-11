@@ -65,6 +65,23 @@ class PointsModel(object):
         return num / den
 
 
+class RandomModel(PointsModel):
+    """Good for benchmarking"""
+
+    def __init__(self, target_getter: TargetGetter = _scores):
+        super().__init__(target_getter)
+
+    def fit_impl(self, train_set: List[Game]) -> None:
+        pass
+
+    def predict(self, game: Game) -> AwayHomeTarget:
+        # We want to do this deterministically.
+        MAX_SCORE = 7
+        away_score = hash(f"{game.away}-{game.date}") % MAX_SCORE
+        home_score = hash(f"{game.home}-{game.date}") % MAX_SCORE
+        return away_score, home_score
+
+
 class InteractionModel(PointsModel):
     """For this model, the prediction of win margin is average win margin from the
     previous times the two teams met."""
