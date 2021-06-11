@@ -59,3 +59,30 @@ for model in [
     logging.info(model)
     model.fit(data_18)
     logging.info(model.score(data_18))
+
+
+# Combine shots with goal percentage to get a score model
+class ShotsWithGoalPerc(models.PointsModel):
+    """For this model, we have a variable for both the team and its opponent."""
+
+    def __init__(self):
+        # Average points per game for each team.
+        self._shot_model = models.OffenseOnlyModel(get_shots_on_goal)
+        self._goal_perc_model = models.DefenseOnlyModel(goal_percentage)
+        super().__init__()
+
+    def fit(self, train_set: List[Game]) -> None:
+        self._shot_model.fit(train_set)
+        self._goal_perc_model.fit(train_set)
+
+    def predict(self, game: Game) -> models.AwayHomeTarget:
+        away_att, home_att = self._shot_model.predict(game)
+        away_perc, home_perc = self._goal_perc_model.predict(game)
+
+        return (away_att * away_perc, home_att * home_perc)
+
+
+logging.info("ShotsWithGoalPerc Model")
+model = ShotsWithGoalPerc()
+model.fit(data_18)
+logging.info(model.score(data_18))
