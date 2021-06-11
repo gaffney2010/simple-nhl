@@ -175,3 +175,34 @@ class OffenseOnlyModel(PointsModel):
     def predict(self, game: Game) -> AwayHomeTarget:
         assert (self._avg_pts)  # fit has already run
         return self._avg_pts[game.away], self._avg_pts[game.home]
+
+
+class DefenseOnlyModel(PointsModel):
+    """For this model, we have a variable for both the team and its opponent."""
+
+    def __init__(self, target_getter: TargetGetter = _scores):
+        # Average points per game for each team.
+        self._avg_pts = dict()
+        super().__init__(target_getter)
+
+    def fit_impl(self, train_set: List[Game]) -> None:
+        _points_won = defaultdict(int)
+        _played = defaultdict(int)
+
+        for game in train_set:
+            targets = self.target_getter(game)
+            if not targets:
+                # Skip over errors
+                continue
+            away_target, home_target = targets
+            _points_won[game.home] += away_target
+            _points_won[game.away] += home_target
+            _played[game.home] += 1
+            _played[game.away] += 1
+
+        for k in _played.keys():
+            self._avg_pts[k] = _points_won[k] / _played[k]
+
+    def predict(self, game: Game) -> AwayHomeTarget:
+        assert (self._avg_pts)  # fit has already run
+        return self._avg_pts[game.home], self._avg_pts[game.away]

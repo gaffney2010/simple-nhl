@@ -27,9 +27,32 @@ def get_shots_on_goal(game: Game) -> Optional[models.AwayHomeTarget]:
     return (data.away_att, data.home_att)
 
 for model in [
-    models.InteractionModel(),
-    models.OffenseDefenseModel(),
-    models.OffenseOnlyModel()
+    models.InteractionModel(get_shots_on_goal),
+    models.OffenseDefenseModel(get_shots_on_goal),
+    models.OffenseOnlyModel(get_shots_on_goal)
+]:
+    logging.info(" ")
+    logging.info("========================")
+    logging.info(model)
+    model.fit(data_18)
+    logging.info(model.score(data_18))
+
+
+# Goal percentage model
+def goal_percentage(game: Game) -> Optional[models.AwayHomeTarget]:
+    """Gets scores for the game.  Default target."""
+    data = game_data.load_game_data(game)
+    if data is None:
+        return None
+    if data.away_att == 0 or data.home_att == 0:
+        return None
+    return (data.away_score/data.away_att, data.home_score/data.home_att)
+
+for model in [
+    models.InteractionModel(goal_percentage),
+    models.OffenseDefenseModel(goal_percentage),
+    models.OffenseOnlyModel(goal_percentage),
+    models.DefenseOnlyModel(goal_percentage)
 ]:
     logging.info(" ")
     logging.info("========================")
